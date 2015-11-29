@@ -122,6 +122,7 @@ module Encoder : sig
       the use of protobuf-encoding for any type that must outwardly satisfy ability 
       to encode itself in protobuf form but for which we don't want to do so. *)
   val creates : bytes -> t
+  val of_bytes : t -> bytes -> unit
   (** [to_string e] converts the message assembled in [e] to a string. *)
   val to_string : t -> string
 

@@ -223,6 +223,10 @@ module Encoder = struct
   let creates s =
     let t = Buffer.create (Bytes.length s) in
     let _ = Buffer.add_bytes t s in t;;
+
+  let of_bytes e s =
+    Buffer.reset e;
+    Buffer.add_bytes e s;;
     
   let to_string = Buffer.contents
 
