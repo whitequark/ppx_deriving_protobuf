@@ -87,6 +87,8 @@ module Decoder = struct
       offset = 0;
       limit  = String.length source; }
 
+  let to_bytes t () = t.source    
+
   let decode_exn f source =
     f (of_bytes source)
 
@@ -218,6 +220,10 @@ module Encoder = struct
   let create () =
     Buffer.create 16
 
+  let creates s =
+    let t = Buffer.create (Bytes.length s) in
+    let _ = Buffer.add_bytes t s in t;;
+    
   let to_string = Buffer.contents
 
   let to_bytes = Buffer.to_bytes
