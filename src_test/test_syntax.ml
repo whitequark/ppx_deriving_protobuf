@@ -1,15 +1,19 @@
 open OUnit2
-
 type uint32 = Uint32.t
 type uint64 = Uint64.t
-
+let hex_of_string s =
+  Core.Std.String.concat_map s ~f:(fun c -> Core.Std.sprintf "%02X" (Core.Std.Char.to_int c));;    
 let assert_roundtrip printer encoder decoder str value =
   (* encode *)
   let e = Protobuf.Encoder.create () in
   encoder value e;
-  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
+  (*let h = hex_of_string (Protobuf.Encoder.to_string e) in
+  print_string ("\nEncoder:" ^ h ^ " | " ^ ((Printf.sprintf "%S") str) ^ "\n");*)
   (* decode *)
   let d = Protobuf.Decoder.of_string str in
+  (*let h2 = hex_of_string (printer value) in
+  print_string ("\nDecoder:" ^ h2 ^ " | " ^ (printer value) ^ "\n");*)
+  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
   assert_equal ~printer value (decoder d)
 
 type b = bool [@@deriving protobuf]
@@ -152,7 +156,7 @@ let test_nested ctxt =
                    { r2a = { r1a = 300; r1b = "spartans" } }
 
 type r3 = {
-  r3a : (int [@encoding `bits32]) * string [@key 1];
+  r3a : ((int [@encoding `bits32]) * string) [@key 1];
 } [@@deriving protobuf]
 let test_imm_tuple ctxt =
   let printer { r3a = a, b } = Printf.sprintf "{ r3a = %d, %s } }" a b in
@@ -163,8 +167,8 @@ let test_imm_tuple ctxt =
 type v1 =
 | V1A [@key 1]
 | V1B [@key 2]
-| V1C of int [@key 3]
-| V1D of string * string [@key 4]
+| V1C [@key 3] of int [@key 4]
+| V1D [@key 5] of (string * string) [@key 6]
 [@@deriving protobuf]
 let test_variant ctxt =
   let printer v =
@@ -179,8 +183,9 @@ let test_variant ctxt =
   assert_roundtrip printer v1_to_protobuf v1_from_protobuf
                    "\x08\x03\x20\x2a" (V1C 42);
   assert_roundtrip printer v1_to_protobuf v1_from_protobuf
-                   "\x08\x04\x2a\x0a\x0a\x03foo\x12\x03bar" (V1D ("foo", "bar"))
-
+                   (*"\x08\x04\x2a\x0a\x0a\x03foo\x12\x03bar"*)
+		   "\x08\x05\x32\x0a\x0a\x03foo\x12\x03bar" (V1D ("foo", "bar"))
+   
 type v2 =
 | V2A [@key 1]
 | V2B [@key 2]
@@ -207,7 +212,7 @@ let test_tvar ctxt =
 
 type 'a mylist =
 | Nil [@key 1]
-| Cons of 'a * 'a mylist [@key 2]
+| Cons [@key 2] of ('a * 'a mylist) [@key 3]
 [@@deriving protobuf]
 let test_mylist ctxt =
   let rec printer f v =
@@ -224,10 +229,9 @@ let test_mylist ctxt =
                    (Cons (1, (Cons (2, (Cons (3, Nil))))))
 
 type v3 = [
-  `V3A [@key 1]
-| `V3B of int [@key 2]
-| `V3C of string * string [@key 3]
-]
+  | `V3A [@key 1]
+  | `V3B [@key 2] of int [@key 3]
+  | `V3C [@key 4] of (string * string) [@key 5]]
 [@@deriving protobuf]
 let test_poly_variant ctxt =
   let printer v =
@@ -241,7 +245,7 @@ let test_poly_variant ctxt =
   assert_roundtrip printer v3_to_protobuf v3_from_protobuf
                    "\x08\x02\x18\x2a" (`V3B 42);
   assert_roundtrip printer v3_to_protobuf v3_from_protobuf
-                   "\x08\x03\x22\x0a\x0a\x03abc\x12\x03def" (`V3C ("abc", "def"))
+                   "\x08\x04\x2a\x0a\x0a\x03abc\x12\x03def" (`V3C ("abc", "def"))
 
 type r6 = {
   r6a : [ `R6A [@key 1] | `R6B [@key 2] ] [@key 1];
@@ -278,10 +282,10 @@ let test_imm_pv_bare ctxt =
                    "\x08\x01\x10\x2a" { r8a = `Request; r8b = 42 }
 
 type v5 =
-| V5A of int option [@key 1]
-| V5B of string list [@key 2]
-| V5C of int array [@key 3]
-| V5D [@key 4]
+| V5A [@key 1] of int option [@key 2]
+| V5B [@key 2] of string list [@key 3]
+| V5C [@key 4] of int array [@key 5]
+| V5D [@key 6]
 [@@deriving protobuf]
 let test_variant_optrep ctxt =
   let printer v5 =
@@ -297,14 +301,15 @@ let test_variant_optrep ctxt =
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
                    "\x08\x01" (V5A None);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
-                   "\x08\x02\x1a\x0242\x1a\x0243" (V5B ["42"; "43"]);
+		   "\x08\x02\x1a\x02\x34\x32\x1a\x02\x34\x33" (V5B ["42"; "43"]);
+  (*"\x08\x02\x1a\x0242\x1a\x0243" (V5B ["42"; "43"]);*)
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
                    "\x08\x02" (V5B []);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
-                   "\x08\x03\x20\x2a\x20\x2b" (V5C [|42; 43|]);
+                   (*"\x08\x03\x20\x2a\x20\x2b"*) "\x08\x04\x28\x2A\x28\x2B" (V5C [|42; 43|]);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
-                   "\x08\x03" (V5C [||])
-
+                   "\x08\x04" (V5C [||])
+   
 type r9 = i1 r5 [@@deriving protobuf]
 let test_nonpoly ctxt =
   let printer { r5a } = Printf.sprintf "{ r5a = %d }" r5a in
