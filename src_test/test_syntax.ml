@@ -1,8 +1,8 @@
 open OUnit2
 type uint32 = Uint32.t
 type uint64 = Uint64.t
-let hex_of_string s =
-  Core.Std.String.concat_map s ~f:(fun c -> Core.Std.sprintf "%02X" (Core.Std.Char.to_int c));;    
+(*let hex_of_string s =
+  Core.Std.String.concat_map s ~f:(fun c -> Core.Std.sprintf "%02X" (Core.Std.Char.to_int c));;    *)
 let assert_roundtrip printer encoder decoder str value =
   (* encode *)
   let e = Protobuf.Encoder.create () in
