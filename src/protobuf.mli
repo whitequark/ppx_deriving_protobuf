@@ -32,6 +32,7 @@ module Decoder : sig
   (** [of_string s] creates a decoder positioned at start of string [s]. *)
   val of_string : string -> t
 
+  val to_bytes : t -> unit -> bytes
   (** [at_end d] returns [true] if [d] has exhausted its input, and [false]
       otherwise. *)
   val at_end    : t -> bool
@@ -116,7 +117,12 @@ module Encoder : sig
 
   (** [create ()] creates a new encoder. *)
   val create    : unit -> t
-
+  (** [create bytes] creates a new encoder with the arbitrary contents of bytes. 
+      Use with caution. Allows client code to bypass 
+      the use of protobuf-encoding for any type that must outwardly satisfy ability 
+      to encode itself in protobuf form but for which we don't want to do so. *)
+  val creates : bytes -> t
+  val of_bytes : t -> bytes -> unit
   (** [to_string e] converts the message assembled in [e] to a string. *)
   val to_string : t -> string
 
