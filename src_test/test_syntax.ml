@@ -1,19 +1,14 @@
 open OUnit2
 type uint32 = Uint32.t
 type uint64 = Uint64.t
-(*let hex_of_string s =
-  Core.Std.String.concat_map s ~f:(fun c -> Core.Std.sprintf "%02X" (Core.Std.Char.to_int c));;    *)
+
 let assert_roundtrip printer encoder decoder str value =
   (* encode *)
   let e = Protobuf.Encoder.create () in
   encoder value e;
-  (*let h = hex_of_string (Protobuf.Encoder.to_string e) in
-  print_string ("\nEncoder:" ^ h ^ " | " ^ ((Printf.sprintf "%S") str) ^ "\n");*)
+  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
   (* decode *)
   let d = Protobuf.Decoder.of_string str in
-  (*let h2 = hex_of_string (printer value) in
-  print_string ("\nDecoder:" ^ h2 ^ " | " ^ (printer value) ^ "\n");*)
-  assert_equal ~printer:(Printf.sprintf "%S") str (Protobuf.Encoder.to_string e);
   assert_equal ~printer value (decoder d)
 
 type b = bool [@@deriving protobuf]
@@ -302,11 +297,10 @@ let test_variant_optrep ctxt =
                    "\x08\x01" (V5A None);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
 		   "\x08\x02\x1a\x02\x34\x32\x1a\x02\x34\x33" (V5B ["42"; "43"]);
-  (*"\x08\x02\x1a\x0242\x1a\x0243" (V5B ["42"; "43"]);*)
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
                    "\x08\x02" (V5B []);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
-                   (*"\x08\x03\x20\x2a\x20\x2b"*) "\x08\x04\x28\x2A\x28\x2B" (V5C [|42; 43|]);
+                   "\x08\x04\x28\x2A\x28\x2B" (V5C [|42; 43|]);
   assert_roundtrip printer v5_to_protobuf v5_from_protobuf
                    "\x08\x04" (V5C [||])
    
