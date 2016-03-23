@@ -389,7 +389,17 @@ let fields_of_ptype base_path ptype =
       |> List.map (fun (name, pcd_args, pcd_attributes, pcd_loc) -> 
         match pcd_args with
         | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes, pcd_loc) 
-        | Pcstr_record _ -> failwith "Unsupported inline records"
+        | Pcstr_record pcd_label_args -> 
+          (* For now inline record are treated just like tuple (hence the key will be 
+             automatically generated starting at 1)
+             
+             Since inline records support attributes, protobuf keys could be
+             customized:
+             
+             `| F {f10 [@key 10] : int; f11 [@key 11] :string}` 
+          *)
+          let pcd_args = List.map (fun {pld_type; _ } -> pld_type) pcd_label_args in 
+          (name, pcd_args, pcd_attributes, pcd_loc)
       ) 
       |> fields_of_variant ptype_loc
   in
@@ -952,7 +962,9 @@ let rec derive_writer fields ptype =
       |> List.map (fun (name, pcd_args, pcd_attributes) -> 
         match pcd_args with
         | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes) 
-        | Pcstr_record _ -> failwith "Unsupported inline records"
+        | Pcstr_record pcd_label_args -> 
+          let pcd_args = List.map (fun {pld_type; _ } -> pld_type) pcd_label_args in 
+          (name, pcd_args, pcd_attributes)
       ) 
       |> mk_variant pconstr
 
