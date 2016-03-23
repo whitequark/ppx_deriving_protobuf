@@ -386,6 +386,7 @@ let fields_of_ptype base_path ptype =
       |> List.map (fun { pcd_name = { txt = name }; pcd_args; pcd_attributes; pcd_loc; } ->
        (name, pcd_args, pcd_attributes, pcd_loc)
       ) 
+#if OCAML_VERSION >= (4, 03, 0)
       |> List.map (fun (name, pcd_args, pcd_attributes, pcd_loc) -> 
         match pcd_args with
         | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes, pcd_loc) 
@@ -401,6 +402,7 @@ let fields_of_ptype base_path ptype =
           let pcd_args = List.map (fun {pld_type; _ } -> pld_type) pcd_label_args in 
           (name, pcd_args, pcd_attributes, pcd_loc)
       ) 
+#endif
       |> fields_of_variant ptype_loc
   in
   fields |> List.iter (fun field ->
@@ -705,11 +707,15 @@ let rec derive_reader base_path fields ptype =
       |> List.map (fun { pcd_name = { txt = name}; pcd_args; pcd_attributes; } ->
         name, pcd_args, pcd_attributes
       ) 
+#if OCAML_VERSION >= (4, 03, 0)
       |> List.map (fun (name, pcd_args, pcd_attributes) -> 
-         match pcd_args with
-         | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes) 
-         | Pcstr_record _ -> failwith "Unsupported inline records"
+        match pcd_args with
+        | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes) 
+        | Pcstr_record pcd_label_args -> 
+          let pcd_args = List.map (fun {pld_type; _ } -> pld_type) pcd_label_args in 
+          (name, pcd_args, pcd_attributes)
        ) 
+#endif 
       |> mk_variant ptype_name ptype_loc constr
   in
   let read =
@@ -959,6 +965,7 @@ let rec derive_writer fields ptype =
       |> List.map (fun { pcd_name = { txt = name }; pcd_args; pcd_attributes } ->
           (name, pcd_args, pcd_attributes)
       ) 
+#if OCAML_VERSION >= (4, 03, 0)
       |> List.map (fun (name, pcd_args, pcd_attributes) -> 
         match pcd_args with
         | Pcstr_tuple pcd_args -> (name, pcd_args, pcd_attributes) 
@@ -966,6 +973,7 @@ let rec derive_writer fields ptype =
           let pcd_args = List.map (fun {pld_type; _ } -> pld_type) pcd_label_args in 
           (name, pcd_args, pcd_attributes)
       ) 
+#endif
       |> mk_variant pconstr
 
   in

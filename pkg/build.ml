@@ -6,7 +6,7 @@ let ocamlbuild =
   "ocamlbuild -use-ocamlfind -classic-display -plugin-tag 'package(cppo_ocamlbuild)'"
 
 let () =
-  Pkg.describe "ppx_deriving" ~builder:(`Other (ocamlbuild, "_build")) [
+  Pkg.describe "ppx_deriving_protobuf" ~builder:(`Other (ocamlbuild, "_build")) [
     Pkg.lib "pkg/META";
     Pkg.lib ~exts:Exts.module_library "src/protobuf";
     Pkg.lib ~exts:Exts.library "src/ppx_deriving_protobuf";
