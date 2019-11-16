@@ -204,13 +204,9 @@ let deriver = "protobuf"
 
 let pb_key_of_attrs attrs =
   match Ppx_deriving.attr ~deriver "key" attrs with
-#if OCAML_VERSION < (4, 03, 0)
-  | Some ({ loc }, PStr [[%stri [%e? { pexp_desc = Pexp_constant (Const_int key) }]]]) ->
-#else
   | Some (Attribute_patt(loc, _,
     (PStr [[%stri [%e? { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) }]]]))) ->
     let key = int_of_string sn in
-#endif
     if key < 1 || key > 0x1fffffff || (key >= 19000 && key <= 19999) then
       raise (Error (Pberr_key_invalid (loc, key)));
     Some key
@@ -438,22 +434,12 @@ let fields_of_ptype base_path ptype =
   fields |> List.sort (fun { pbf_key = a } { pbf_key = b } -> compare a b)
 
 let empty_constructor_argument {pcd_args; _ } =
-#if OCAML_VERSION < (4, 03, 0)
-  match pcd_args with
-  | [] -> true
-  | _ -> false
-#else
   match pcd_args with
   | Pcstr_tuple   [] | Pcstr_record [] -> true
   | _ -> false
-#endif
 
 let int64_constant_of_int i =
-#if OCAML_VERSION < (4, 03, 0)
-  Const_int64 (Int64.of_int i)
-#else
   Pconst_integer (string_of_int i, Some 'L')
-#endif
 
 let derive_reader_bare base_path fields ptype =
   let mk_variant mk_constr constrs =
@@ -1163,12 +1149,8 @@ let rec write_protoc ~fmt ~path:base_path ?(import=[])
     begin match field.pbf_default with
     | Some [%expr true]  -> Format.fprintf fmt " [default=true]"
     | Some [%expr false] -> Format.fprintf fmt " [default=false]"
-#if OCAML_VERSION < (4, 03, 0)
-    | Some { pexp_desc = Pexp_constant (Const_int i) } ->
-#else
     | Some { pexp_desc = Pexp_constant (Pconst_integer (sn, _)) } ->
       let i = int_of_string sn in
-#endif
       Format.fprintf fmt " [default=%d]" i
     | Some { pexp_desc = Pexp_constant (Pconst_string (s, _)) } ->
       Format.fprintf fmt " [default=\"%s\"]" (escape ~pass_8bit:true s)
